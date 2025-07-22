@@ -1,10 +1,10 @@
 #Created by: Uncle Khawaja Mohammad
-#Date: 2025-7-21
-#CIS Benchmarks for SQL Server 2019 Version: 1.5.0
+#Date: 2025-7-22
+#CIS Benchmarks for SQL Server 2016 Version: 1.4.0
 
 
 
-# PowerShell script to audit SQL Server 2019 against CIS Benchmarks v1.5.0 (Automated checks only)
+# PowerShell script to audit SQL Server 2016 against CIS Benchmarks v1.4.0 (Automated checks only)
 # Requires SQL Server Management Objects (SMO) and PowerShell SQL Server module
 # Run with sysadmin privileges on the SQL Server instance
 # Manual Changes for automates: 2.12 & 5.1
@@ -15,7 +15,7 @@ Import-Module SqlServer -ErrorAction SilentlyContinue
 $serverInstance = "KHAWAJA"  # Replace with your SQL Server instance name
 $outputCsv = ".\ComplianceScore.csv"  # Output file
 $results = @()
-$totalChecks = 36 
+$totalChecks = 36
 $passCount = 0
 $failCount = 0
 
@@ -151,10 +151,10 @@ if ($dataset) {
     $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
     $current = "Configured: $valConf, InUse: $valUse"
     Add-Result -CheckId "2.5" -Description "Ensure 'Ole Automation Procedures' is set to '0'" `
-               -Status $status -CurrentValue $current -ExpectedValue "0 (both)"
+               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
 } else {
     Add-Result -CheckId "2.5" -Description "Ensure 'Ole Automation Procedures' is set to '0'" `
-               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "0 (both)"
+               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
 }
 
 # CIS Check 2.6: Ensure 'Remote Access' is set to '0'
@@ -168,10 +168,10 @@ if ($dataset) {
     $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
     $current = "Configured: $valConf, InUse: $valUse"
     Add-Result -CheckId "2.6" -Description "Ensure 'Remote Access' is set to '0'" `
-               -Status $status -CurrentValue $current -ExpectedValue "0 (both)"
+               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
 } else {
     Add-Result -CheckId "2.6" -Description "Ensure 'Remote Access' is set to '0'" `
-               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "0 (both)"
+               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
 }
 
 # CIS Check 2.7: Ensure 'Remote Admin Connections' is set to '0' (non-clustered only)
@@ -190,10 +190,10 @@ elseif ($dataset) {
     $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
     $current = "Configured: $valConf, InUse: $valUse"
     Add-Result -CheckId "2.7" -Description "Ensure 'Remote Admin Connections' is set to '0'" `
-               -Status $status -CurrentValue $current -ExpectedValue "0 (both)"
+               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
 } else {
     Add-Result -CheckId "2.7" -Description "Ensure 'Remote Admin Connections' is set to '0'" `
-               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "0 (both)"
+               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
 }
 
 
@@ -208,10 +208,10 @@ if ($dataset) {
     $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
     $current = "Configured: $valConf, InUse: $valUse"
     Add-Result -CheckId "2.8" -Description "Ensure 'Scan For Startup Procs' is set to '0'" `
-               -Status $status -CurrentValue $current -ExpectedValue "0 (both)"
+               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
 } else {
     Add-Result -CheckId "2.8" -Description "Ensure 'Scan For Startup Procs' is set to '0'" `
-               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "0 (both)"
+               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
 }
 
 
@@ -286,50 +286,38 @@ $currentValue = if ($null -eq $dataset) { "'sa' Login Account has been renamed" 
 Add-Result -CheckId "2.14" -Description "Ensure the 'sa' Login Account has been renamed" `
            -Status $status -CurrentValue $currentValue -ExpectedValue "'sa' Login Account has been renamed"
 
+# CIS Check 2.15: Ensure 'xp_cmdshell' Server Configuration Option is set to '0' 
+$query = "SELECT name, CAST(value as int) as value_configured, CAST(value_in_use as int) as value_in_use FROM sys.configurations WHERE name = 'xp_cmdshell';"
+$dataset = Execute-SqlQuery -Query $query
+if ($dataset) {
+    $valConf = $dataset.value_configured
+    $valUse  = $dataset.value_in_use
+    $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
+    $current = "Configured: $valConf, InUse: $valUse"
+    Add-Result -CheckId "2.15" -Description "Ensure 'Ole Automation Procedures' is set to '0'" `
+               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
+} else {
+    Add-Result -CheckId "2.5" -Description "Ensure 'Ole Automation Procedures' is set to '0'" `
+               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
+}
 
-# CIS Check 2.15: Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases
+
+# CIS Check 2.16: Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases
 $query = "SELECT name, is_auto_close_on FROM sys.databases WHERE containment <> 0 AND is_auto_close_on = 1;"
 $dataset = Execute-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No contained databases with AUTO_CLOSE ON" } else { ($dataset.name -join ", ") }
-Add-Result -CheckId "2.15" -Description "Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases" `
+Add-Result -CheckId "2.16" -Description "Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases" `
            -Status $status -CurrentValue $currentValue -ExpectedValue "No contained databases with AUTO_CLOSE ON"
 
 
-# CIS Check 2.16: Ensure no login exists with the name 'sa'
+# CIS Check 2.17: Ensure no login exists with the name 'sa'
 $query = "SELECT name FROM sys.server_principals WHERE name = 'sa';"
 $dataset = Execute-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No 'sa' login found" } else { "sa login exists" }
-Add-Result -CheckId "2.16" -Description "Ensure no login exists with the name 'sa'" `
+Add-Result -CheckId "2.17" -Description "Ensure no login exists with the name 'sa'" `
            -Status $status -CurrentValue $currentValue -ExpectedValue "No 'sa' login"
-
-
-# CIS Check 2.17: Ensure 'clr strict security' is enabled
-$query = @"
-SELECT name,
-       CAST(value AS int) AS value_configured,
-       CAST(value_in_use AS int) AS value_in_use
-FROM sys.configurations
-WHERE name = 'clr strict security';
-"@
-$dataset = Execute-SqlQuery -Query $query
-if ($dataset -and $null -ne $dataset.value_configured -and $null -ne $dataset.value_in_use) {
-    $valueConfigured = $dataset.value_configured
-    $valueInUse = $dataset.value_in_use
-    $status = if ($valueConfigured -eq 1 -and $valueInUse -eq 1) { "Pass" } else { "Fail" }
-    $description = "Ensure 'clr strict security' is enabled"
-    if ($valueConfigured -ne 1 -or $valueInUse -ne 1) {
-        $description += "Ensure 'clr strict security' is enabled"
-    }
-    Add-Result -CheckId "2.17" -Description $description -Status $status `
-               -CurrentValue "value_configured = $valueConfigured, value_in_use = $valueInUse" -ExpectedValue "value_configured = 1, value_in_use = 1"
-} else {
-    Add-Result -CheckId "2.17" -Description "Ensure 'clr strict security' is enabled" `
-               -Status "Error" -CurrentValue "Unable to retrieve clr strict security settings" `
-               -ExpectedValue "value_configured = 1, value_in_use = 1"
-}
-
 
 # CIS Check 3.1: Ensure 'Server Authentication' is set to 'Windows Authentication Mode'
 $query = "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS auth_mode;"
@@ -343,8 +331,6 @@ if ($dataset) {
     Add-Result -CheckId "3.1" -Description "Ensure 'Server Authentication' is set to 'Windows Authentication Mode'" `
                -Status "Error" -CurrentValue "Query failed" -ExpectedValue 1
 }
-
-
 
 # CIS Check 3.2: Ensure 'CONNECT' permissions are revoked from the 'guest' user
 $dbQuery = "SELECT name FROM sys.databases WHERE state = 0 AND name NOT IN ('master', 'tempdb', 'msdb');"
@@ -432,7 +418,6 @@ $description = "Ensure Windows local groups are not SQL Logins"
 if ($groupCount -gt 0) { $description += ". Found Windows local groups as SQL Logins: " + (($dataset.LocalGroupName | Select-Object -Unique) -join ", ") }
 Add-Result -CheckId "3.10" -Description $description -Status $status -CurrentValue $groupCount -ExpectedValue 0
 
-
 # CIS Check 3.11: Ensure the public role in msdb is not granted access to SQL Agent proxies
 $query = "USE [msdb]; SELECT sp.name AS proxyname FROM dbo.sysproxylogin spl JOIN sys.database_principals dp ON dp.sid = spl.sid JOIN sysproxies sp ON sp.proxy_id = spl.proxy_id WHERE principal_id = USER_ID('public');"
 $dataset = Execute-SqlQuery -Query $query
@@ -441,18 +426,6 @@ $status = if ($proxyCount -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure the public role in the msdb database is not granted access to SQL Agent proxies"
 if ($proxyCount -gt 0) { $description += ". Found proxies accessible to public: " + (($dataset.proxyname | Select-Object -Unique) -join ", ") }
 Add-Result -CheckId "3.11" -Description $description -Status $status -CurrentValue $proxyCount -ExpectedValue 0
-
-# CIS Check 3.13: Ensure no users other than dbo are assigned to sensitive roles in msdb
-$query = "USE [msdb]; SELECT COUNT(*) AS role_count FROM sys.database_role_members drm INNER JOIN sys.database_principals r ON drm.role_principal_id = r.principal_id INNER JOIN sys.database_principals m ON drm.member_principal_id = m.principal_id WHERE r.name IN ('db_owner', 'db_securityadmin', 'db_ddladmin', 'db_datawriter') AND m.name <> 'dbo';"
-$dataset = Execute-SqlQuery -Query $query
-$roleCount = if ($dataset -and $dataset.role_count -ge 0) { $dataset.role_count } else { 0 }
-$status = if ($roleCount -eq 0) { "Pass" } else { "Fail" }
-$description = "Ensure no users other than dbo are assigned to sensitive roles in msdb database"
-if ($roleCount -gt 0) {
-    $detailDataset = Execute-SqlQuery -Query "USE [msdb]; SELECT DISTINCT m.name AS user_name FROM sys.database_role_members drm INNER JOIN sys.database_principals r ON drm.role_principal_id = r.principal_id INNER JOIN sys.database_principals m ON drm.member_principal_id = m.principal_id WHERE r.name IN ('db_owner', 'db_securityadmin', 'db_ddladmin', 'db_datawriter') AND m.name <> 'dbo';"
-    $description += ". Found users in sensitive roles: " + (($detailDataset.user_name | Select-Object -Unique) -join ", ")
-}
-Add-Result -CheckId "3.13" -Description $description -Status $status -CurrentValue $roleCount -ExpectedValue 0
 
 # CIS Check 4.2: Ensure SQL logins with sysadmin or CONTROL SERVER permissions have password expiration checked
 $query = "SELECT l.[name], 'sysadmin membership' AS 'Access_Method' FROM sys.sql_logins AS l WHERE IS_SRVROLEMEMBER('sysadmin', name) = 1 AND l.is_expiration_checked <> 1 UNION ALL SELECT l.[name], 'CONTROL SERVER' AS 'Access_Method' FROM sys.sql_logins AS l JOIN sys.server_permissions AS p ON l.principal_id = p.grantee_principal_id WHERE p.type = 'CL' AND p.state IN ('G', 'W') AND l.is_expiration_checked <> 1;"
