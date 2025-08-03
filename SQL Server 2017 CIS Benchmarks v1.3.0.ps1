@@ -90,25 +90,7 @@ if ($strictSecurity -and $strictSecurity.value_configured -eq 1 -and $strictSecu
 # CIS Check 2.3: Ensure 'Cross DB Ownership Chaining' is set to '0'
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'cross db ownership chaining';"
-$dataset = Execute-SqlQuery -Query $query
-
-if ($dataset) {
-    $valConf = $dataset.value_configured
-    $valUse  = $dataset.value_in_use
-    $status = if ($valConf -eq 0 -and $valUse -eq 0) { "Pass" } else { "Fail" }
-    $current = "Configured: $valConf, InUse: $valUse"
-    Add-Result -CheckId "2.3" -Description "Ensure 'Cross DB Ownership Chaining' is set to '0'" `
-               -Status $status -CurrentValue $current -ExpectedValue "Configured: 0, InUse: 0"
-} else {
-    Add-Result -CheckId "2.3" -Description "Ensure 'Cross DB Ownership Chaining' is set to '0'" `
-               -Status "Error" -CurrentValue "Query failed" -ExpectedValue "Configured: 0, InUse: 0"
-}
-
-
-# CIS Check 2.3: Ensure 'Cross DB Ownership Chaining' is set to '0'
-$query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
-          FROM sys.configurations WHERE name = 'cross db ownership chaining';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset) {
     $valConf = $dataset.value_configured
@@ -126,7 +108,7 @@ if ($dataset) {
 # CIS Check 2.4: Ensure 'Database Mail XPs' is set to '0'
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'Database Mail XPs';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset) {
     $valConf = $dataset.value_configured
@@ -143,7 +125,7 @@ if ($dataset) {
 # CIS Check 2.5: Ensure 'Ole Automation Procedures' is set to '0'
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'Ole Automation Procedures';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset) {
     $valConf = $dataset.value_configured
@@ -160,7 +142,7 @@ if ($dataset) {
 # CIS Check 2.6: Ensure 'Remote Access' is set to '0'
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'remote access';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset) {
     $valConf = $dataset.value_configured
@@ -177,7 +159,7 @@ if ($dataset) {
 # CIS Check 2.7: Ensure 'Remote Admin Connections' is set to '0' (non-clustered only)
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'remote admin connections' AND SERVERPROPERTY('IsClustered') = 0;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset -and $dataset.Count -eq 0) {
     # Instance is clustered — check not applicable
@@ -200,7 +182,7 @@ elseif ($dataset) {
 # CIS Check 2.8: Ensure 'Scan For Startup Procs' is set to '0'
 $query = "SELECT CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use
           FROM sys.configurations WHERE name = 'scan for startup procs';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 
 if ($dataset) {
     $valConf = $dataset.value_configured
@@ -217,7 +199,7 @@ if ($dataset) {
 
 # CIS Check 2.9: Ensure 'Trustworthy' Database Property is set to 'Off'
 $query = "SELECT name FROM sys.databases WHERE is_trustworthy_on = 1 AND name != 'msdb';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No databases with Trustworthy ON (excluding msdb)" } else { ($dataset.name -join ", ") }
 Add-Result -CheckId "2.9" -Description "Ensure 'Trustworthy' Database Property is set to 'Off' (excluding msdb)" `
@@ -235,7 +217,7 @@ ELSE
 SELECT count(*) AS port_count FROM sys.dm_server_registry WHERE value_name like '%Tcp%' and
 value_data='1433';
 "@
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 if ($dataset -and $dataset.port_count -ge 0) {
     $portCount = $dataset.port_count
     $status = if ($portCount -eq 0) { "Pass" } else { "Fail" }
@@ -257,7 +239,7 @@ EXEC master.sys.xp_instance_regread
     @value = @getValue OUTPUT;
 SELECT @getValue AS hide_instance;
 "@
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 if ($dataset -and $dataset.hide_instance -in 0, 1) {
     $hideInstanceValue = $dataset.hide_instance
     $status = if ($hideInstanceValue -eq 1) { "Pass" } else { "Fail" }
@@ -272,7 +254,7 @@ if ($dataset -and $dataset.hide_instance -in 0, 1) {
 
 # CIS Check 2.13: Ensure the 'sa' Login Account is set to 'Disabled'
 $query = "SELECT name, is_disabled FROM sys.server_principals WHERE sid = 0x01 AND is_disabled = 0;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } elseif ($dataset.is_disabled -eq 1) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "1" } else { $dataset.is_disabled }
 Add-Result -CheckId "2.13" -Description "Ensure the 'sa' Login Account is set to 'Disabled'" `
@@ -280,7 +262,7 @@ Add-Result -CheckId "2.13" -Description "Ensure the 'sa' Login Account is set to
 
 # CIS Check 2.14: Ensure the 'sa' Login Account has been renamed
 $query = "SELECT name FROM sys.server_principals WHERE name = 'sa';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "'sa' Login Account has been renamed" } else { "'sa' Login Account hasn't been renamed" }
 Add-Result -CheckId "2.14" -Description "Ensure the 'sa' Login Account has been renamed" `
@@ -288,7 +270,7 @@ Add-Result -CheckId "2.14" -Description "Ensure the 'sa' Login Account has been 
 
 # CIS Check 2.15: Ensure 'xp_cmdshell' Server Configuration Option is set to '0' 
 $query = "SELECT name, CAST(value as int) as value_configured, CAST(value_in_use as int) as value_in_use FROM sys.configurations WHERE name = 'xp_cmdshell';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 if ($dataset) {
     $valConf = $dataset.value_configured
     $valUse  = $dataset.value_in_use
@@ -304,7 +286,7 @@ if ($dataset) {
 
 # CIS Check 2.16: Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases
 $query = "SELECT name, is_auto_close_on FROM sys.databases WHERE containment <> 0 AND is_auto_close_on = 1;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No contained databases with AUTO_CLOSE ON" } else { ($dataset.name -join ", ") }
 Add-Result -CheckId "2.16" -Description "Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases" `
@@ -313,7 +295,7 @@ Add-Result -CheckId "2.16" -Description "Ensure 'AUTO_CLOSE' is set to 'OFF' on 
 
 # CIS Check 2.17: Ensure no login exists with the name 'sa'
 $query = "SELECT name FROM sys.server_principals WHERE name = 'sa';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No 'sa' login found" } else { "sa login exists" }
 Add-Result -CheckId "2.17" -Description "Ensure no login exists with the name 'sa'" `
@@ -328,7 +310,7 @@ SELECT name,
 FROM sys.configurations
 WHERE name = 'clr strict security';
 "@
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 if ($dataset -and $null -ne $dataset.value_configured -and $null -ne $dataset.value_in_use) {
     $valueConfigured = $dataset.value_configured
     $valueInUse = $dataset.value_in_use
@@ -348,7 +330,7 @@ if ($dataset -and $null -ne $dataset.value_configured -and $null -ne $dataset.va
 
 # CIS Check 3.1: Ensure 'Server Authentication' is set to 'Windows Authentication Mode'
 $query = "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS auth_mode;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 if ($dataset) {
     $authMode = $dataset.auth_mode
     $status = if ($authMode -eq 1) { "Pass" } else { "Fail" }
@@ -370,7 +352,7 @@ if ($databases) {
         $databaseName = $db.name
         if ($isRDS -and $databaseName -eq 'rdsadmin') { continue }
         $query = "USE [$databaseName]; SELECT DB_NAME() AS DatabaseName FROM sys.database_permissions WHERE grantee_principal_id = DATABASE_PRINCIPAL_ID('guest') AND state_desc LIKE 'GRANT%' AND permission_name = 'CONNECT';"
-        $dataset = Execute-SqlQuery -Query $query
+        $dataset = Invoke-SqlQuery -Query $query
         if ($dataset -and $dataset.DatabaseName) {
             $unauthorizedDbCount++
             $failedDatabases += $databaseName
@@ -388,14 +370,14 @@ if ($databases) {
 
 # CIS Check 3.3: Ensure no orphaned users exist in any database
 $dbQuery = "SELECT name FROM sys.databases WHERE state = 0;"
-$databases = Execute-SqlQuery -Query $dbQuery
+$databases = Invoke-SqlQuery -Query $dbQuery
 $orphanedDbCount = 0
 $failedDatabases = @()
 if ($databases) {
     foreach ($db in $databases) {
         $databaseName = $db.name
         $query = "USE [$databaseName]; SELECT dp.name AS orphan_user_name FROM sys.database_principals AS dp LEFT JOIN sys.server_principals AS sp ON dp.sid = sp.sid WHERE sp.sid IS NULL AND dp.authentication_type_desc = 'INSTANCE';"
-        $dataset = Execute-SqlQuery -Query $query
+        $dataset = Invoke-SqlQuery -Query $query
         if ($dataset -and $dataset.orphan_user_name) {
             $orphanedDbCount++
             $failedDatabases += $databaseName
@@ -413,7 +395,7 @@ if ($databases) {
 
 # CIS Check 3.4: Ensure SQL Authentication is not used in contained databases
 $query = "SELECT name AS DBUser FROM sys.database_principals WHERE name NOT IN ('dbo','Information_Schema','sys','guest') AND type IN ('U','S','G') AND authentication_type = 2;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No SQL auth in contained databases" } else { ($dataset.DBUser -join ", ") }
 Add-Result -CheckId "3.4" -Description "Ensure SQL Authentication is not used in contained databases" `
@@ -422,7 +404,7 @@ Add-Result -CheckId "3.4" -Description "Ensure SQL Authentication is not used in
 
 # CIS Check 3.8: Ensure only default permissions are granted to the public server role
 $query = "SELECT * FROM master.sys.server_permissions WHERE (grantee_principal_id = SUSER_SID(N'public') and state_desc LIKE 'GRANT%') AND NOT (state_desc = 'GRANT' and [permission_name] = 'VIEW ANY DATABASE' and class_desc = 'SERVER') AND NOT (state_desc = 'GRANT' and [permission_name] = 'CONNECT' and class_desc = 'ENDPOINT' and major_id IN (2,3,4,5));"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No additional public permissions" } else { ($dataset.permission_name -join ", ") }
 Add-Result -CheckId "3.8" -Description "Ensure only default permissions are granted to the public server role" `
@@ -430,7 +412,7 @@ Add-Result -CheckId "3.8" -Description "Ensure only default permissions are gran
 
 # CIS Check 3.9: Ensure Windows BUILTIN groups are not SQL Logins
 $query = "SELECT pr.[name] FROM sys.server_principals pr JOIN sys.server_permissions pe ON pr.principal_id = pe.grantee_principal_id WHERE pr.name LIKE 'BUILTIN%';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $status = if ($null -eq $dataset) { "Pass" } else { "Fail" }
 $currentValue = if ($null -eq $dataset) { "No BUILTIN group logins" } else { ($dataset.name -join ", ") }
 Add-Result -CheckId "3.9" -Description "Ensure Windows BUILTIN groups are not SQL Logins" `
@@ -438,7 +420,7 @@ Add-Result -CheckId "3.9" -Description "Ensure Windows BUILTIN groups are not SQ
 
 # CIS Check 3.10: Ensure Windows local groups are not SQL Logins
 $query = "USE [master]; SELECT pr.[name] AS LocalGroupName FROM sys.server_principals pr JOIN sys.server_permissions pe ON pr.[principal_id] = pe.[grantee_principal_id] WHERE pr.[type_desc] = 'WINDOWS_GROUP' AND pr.[name] LIKE CAST(SERVERPROPERTY('MachineName') AS nvarchar) + '%';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $groupCount = if ($dataset) { @($dataset | Select-Object -Property LocalGroupName -Unique).Count } else { 0 }
 $status = if ($groupCount -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure Windows local groups are not SQL Logins"
@@ -447,7 +429,7 @@ Add-Result -CheckId "3.10" -Description $description -Status $status -CurrentVal
 
 # CIS Check 3.11: Ensure the public role in msdb is not granted access to SQL Agent proxies
 $query = "USE [msdb]; SELECT sp.name AS proxyname FROM dbo.sysproxylogin spl JOIN sys.database_principals dp ON dp.sid = spl.sid JOIN sysproxies sp ON sp.proxy_id = spl.proxy_id WHERE principal_id = USER_ID('public');"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $proxyCount = if ($dataset) { @($dataset | Select-Object -Property proxyname -Unique).Count } else { 0 }
 $status = if ($proxyCount -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure the public role in the msdb database is not granted access to SQL Agent proxies"
@@ -456,10 +438,10 @@ Add-Result -CheckId "3.11" -Description $description -Status $status -CurrentVal
 
 # CIS Check 4.2: Ensure SQL logins with sysadmin or CONTROL SERVER permissions have password expiration checked
 $query = "SELECT l.[name], 'sysadmin membership' AS 'Access_Method' FROM sys.sql_logins AS l WHERE IS_SRVROLEMEMBER('sysadmin', name) = 1 AND l.is_expiration_checked <> 1 UNION ALL SELECT l.[name], 'CONTROL SERVER' AS 'Access_Method' FROM sys.sql_logins AS l JOIN sys.server_permissions AS p ON l.principal_id = p.grantee_principal_id WHERE p.type = 'CL' AND p.state IN ('G', 'W') AND l.is_expiration_checked <> 1;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $unauthorizedLoginCount = 0
 $failedLogins = @()
-$isRDS = (Execute-SqlQuery -Query "SELECT COUNT(*) AS rds_count FROM sys.databases WHERE name = 'rdsadmin';").rds_count -gt 0
+$isRDS = (Invoke-SqlQuery -Query "SELECT COUNT(*) AS rds_count FROM sys.databases WHERE name = 'rdsadmin';").rds_count -gt 0
 if ($dataset -and $dataset.name) {
     $logins = @($dataset | Select-Object -Property name -Unique)
     foreach ($login in $logins) {
@@ -476,7 +458,7 @@ Add-Result -CheckId "4.2" -Description $description -Status $status -CurrentValu
 
 # CIS Check 4.3: Ensure SQL logins have password complexity enforced
 $query = "SELECT name, is_disabled FROM sys.sql_logins WHERE is_policy_checked = 0;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $failedLogins = @()
 if ($dataset) {
     foreach ($login in $dataset) {
@@ -495,7 +477,7 @@ Add-Result -CheckId "4.3" -Description $description -Status $status -CurrentValu
 
 # CIS Check 5.1: Ensure Number of Error Log Files is Greater Than or Equal to 12 or Set to -1
 $query = "DECLARE @NumErrorLogs int; EXEC master.sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'NumErrorLogs', @NumErrorLogs OUTPUT; SELECT ISNULL(@NumErrorLogs, -1) AS NumberOfLogFiles;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $logFileCount = if ($dataset -and $null -ne $dataset.NumberOfLogFiles) { $dataset.NumberOfLogFiles } else { -1 }
 $status = if ($logFileCount -eq -1 -or $logFileCount -ge 12) { "Pass" } else { "Fail" }
 $description = "Ensure Number of Error Log Files is Greater Than or Equal to 12 or Set to -1"
@@ -505,7 +487,7 @@ Add-Result -CheckId "5.1" -Description $description -Status $status -CurrentValu
 
 # CIS Check 5.2: Ensure 'Default Trace Enabled' Server Configuration Option is Set to '1'
 $query = "SELECT name, CAST(value AS int) AS value_configured, CAST(value_in_use AS int) AS value_in_use FROM sys.configurations WHERE name = 'default trace enabled';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $isEnabled = if ($dataset) { $dataset.value_configured -eq 1 -and $dataset.value_in_use -eq 1 } else { $false }
 $status = if ($isEnabled) { "Pass" } else { "Fail" }
 $description = "Ensure 'Default Trace Enabled' Server Configuration Option is Set to '1'"
@@ -515,7 +497,7 @@ Add-Result -CheckId "5.2" -Description $description -Status $status -CurrentValu
 
 # CIS Check 5.3: Ensure 'Login Auditing' is set to 'failed logins' or 'all'
 $query = "EXEC xp_loginconfig 'audit level';"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $auditLevel = if ($dataset -and $dataset.config_value) { $dataset.config_value.Trim().ToLower() } else { "Unknown" }
 $status = if ($auditLevel -in 'failure', 'all') { "Pass" } else { "Fail" }
 $description = "Ensure 'Login Auditing' is set to 'failed logins' or 'all'"
@@ -526,11 +508,11 @@ Add-Result -CheckId "5.3" -Description $description -Status $status -CurrentValu
 # CIS Check 5.4: Ensure 'SQL Server Audit' is set to capture both 'failed' and 'successful logins' and other required actions
 # $query = "SELECT S.name AS Audit_Name, CASE S.is_state_enabled WHEN 1 THEN 'Y' ELSE 'N' END AS Audit_Enabled, SA.name AS Audit_Specification_Name, CASE SA.is_state_enabled WHEN 1 THEN 'Y' ELSE 'N' END AS Audit_Specification_Enabled, SAD.audit_action_name, SAD.audited_result FROM sys.server_audit_specification_details SAD JOIN sys.server_audit_specifications SA ON SAD.server_specification_id = SA.server_specification_id JOIN sys.server_audits S ON SA.audit_guid = S.audit_guid WHERE SAD.audit_action_id IN ('CNAU', 'LGFL', 'LGSD', 'ADDP', 'ADSP', 'OPSV') OR (SAD.audit_action_id IN ('DAGS', 'DAGF') AND (SELECT COUNT(*) FROM sys.databases WHERE containment = 1) > 0);"
 # $requiredActions = @("AUDIT_CHANGE_GROUP", "FAILED_LOGIN_GROUP", "SUCCESSFUL_LOGIN_GROUP", "DATABASE_ROLE_MEMBER_CHANGE_GROUP", "SERVER_ROLE_MEMBER_CHANGE_GROUP", "SERVER_OPERATION_GROUP")
-# $dataset = Execute-SqlQuery -Query $query
+# $dataset = Invoke-SqlQuery -Query $query
 # $misconfiguredCount = 0
 # $missingActions = @()
-# $isRDS = (Execute-SqlQuery -Query "SELECT COUNT(*) AS rds_count FROM sys.databases WHERE name = 'rdsadmin';").rds_count -gt 0
-# $hasContainedDbs = (Execute-SqlQuery -Query "SELECT COUNT(*) AS contained_count FROM sys.databases WHERE containment = 1;").contained_count -gt 0
+# $isRDS = (Invoke-SqlQuery -Query "SELECT COUNT(*) AS rds_count FROM sys.databases WHERE name = 'rdsadmin';").rds_count -gt 0
+# $hasContainedDbs = (Invoke-SqlQuery -Query "SELECT COUNT(*) AS contained_count FROM sys.databases WHERE containment = 1;").contained_count -gt 0
 # if ($hasContainedDbs) { $requiredActions += "SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP", "FAILED_DATABASE_AUTHENTICATION_GROUP" }
 # if ($dataset -and $dataset.audit_action_name) {
 #     $foundActions = @($dataset | Select-Object -Property audit_action_name -Unique | ForEach-Object { $_.audit_action_name })
@@ -544,14 +526,14 @@ Add-Result -CheckId "5.3" -Description $description -Status $status -CurrentValu
 
 # CIS Check 6.2: Ensure 'CLR Assembly Permission Set' is set to 'SAFE_ACCESS'
 $dbQuery = "SELECT name FROM sys.databases WHERE state = 0;"
-$databases = Execute-SqlQuery -Query $dbQuery
+$databases = Invoke-SqlQuery -Query $dbQuery
 $nonSafeAssemblyCount = 0
 $failedAssemblies = @()
 if ($databases) {
     foreach ($db in $databases) {
         $databaseName = $db.name
         $query = "USE [$databaseName]; SELECT name, permission_set_desc FROM sys.assemblies WHERE is_user_defined = 1 AND name <> 'Microsoft.SqlServer.Types';"
-        $dataset = Execute-SqlQuery -Query $query
+        $dataset = Invoke-SqlQuery -Query $query
         if ($dataset -and $dataset.name) {
             foreach ($row in $dataset) {
                 if ($row.permission_set_desc -ne 'SAFE_ACCESS') {
@@ -569,14 +551,14 @@ Add-Result -CheckId "6.2" -Description $description -Status $status -CurrentValu
 
 # CIS Check 7.1: Ensure 'Symmetric Key encryption algorithm' is set to 'AES_128' or higher
 $dbQuery = "SELECT name FROM sys.databases WHERE state = 0 AND database_id > 4;"
-$databases = Execute-SqlQuery -Query $dbQuery
+$databases = Invoke-SqlQuery -Query $dbQuery
 $nonAesKeyCount = 0
 $failedKeys = @()
 if ($databases) {
     foreach ($db in $databases) {
         $databaseName = $db.name
         $query = "USE [$databaseName]; SELECT db_name() AS Database_Name, name AS Key_Name, algorithm_desc FROM sys.symmetric_keys WHERE algorithm_desc NOT IN ('AES_128', 'AES_192', 'AES_256');"
-        $dataset = Execute-SqlQuery -Query $query
+        $dataset = Invoke-SqlQuery -Query $query
         if ($dataset -and $dataset.Key_Name) {
             foreach ($row in $dataset) {
                 $nonAesKeyCount++
@@ -592,14 +574,14 @@ Add-Result -CheckId "7.1" -Description $description -Status $status -CurrentValu
 
 # CIS Check 7.2: Ensure 'Asymmetric Key Size' is set to 'greater than or equal to 2048'
 $dbQuery = "SELECT name FROM sys.databases WHERE state = 0 AND database_id > 4;"
-$databases = Execute-SqlQuery -Query $dbQuery
+$databases = Invoke-SqlQuery -Query $dbQuery
 $weakKeyCount = 0
 $failedKeys = @()
 if ($databases) {
     foreach ($db in $databases) {
         $databaseName = $db.name
         $query = "USE [$databaseName]; SELECT db_name() AS Database_Name, name AS Key_Name, key_length FROM sys.asymmetric_keys WHERE key_length < 2048;"
-        $dataset = Execute-SqlQuery -Query $query
+        $dataset = Invoke-SqlQuery -Query $query
         if ($dataset -and $dataset.Key_Name) {
             foreach ($row in $dataset) {
                 $weakKeyCount++
@@ -615,7 +597,7 @@ Add-Result -CheckId "7.2" -Description $description -Status $status -CurrentValu
 
 # CIS Check 7.3: Ensure Database Backups are Encrypted
 $query = "SELECT b.key_algorithm, b.encryptor_type, d.is_encrypted, b.database_name FROM msdb.dbo.backupset b INNER JOIN sys.databases d ON b.database_name = d.name WHERE b.key_algorithm IS NULL AND b.encryptor_type IS NULL AND d.is_encrypted = 0;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $nonEncryptedBackupCount = if ($dataset) { @($dataset | Select-Object -Property database_name -Unique).Count } else { 0 }
 $status = if ($nonEncryptedBackupCount -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure Database Backups are Encrypted"
@@ -624,7 +606,7 @@ Add-Result -CheckId "7.3" -Description $description -Status $status -CurrentValu
 
 # CIS Check 7.4: Ensure Network Encryption is Configured and Enabled
 $query = "USE [master]; SELECT DISTINCT encrypt_option FROM sys.dm_exec_connections;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $nonEncryptedConnections = if ($dataset -and ($dataset.encrypt_option | Select-Object -Unique) -contains "FALSE") { 1 } else { 0 }
 $status = if ($nonEncryptedConnections -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure Network Encryption is Configured and Enabled"
@@ -633,7 +615,7 @@ Add-Result -CheckId "7.4" -Description $description -Status $status -CurrentValu
 
 # CIS Check 7.5: Ensure Databases are Encrypted with TDE
 $query = "SELECT database_id, name, is_encrypted FROM sys.databases WHERE database_id > 4 AND is_encrypted != 1;"
-$dataset = Execute-SqlQuery -Query $query
+$dataset = Invoke-SqlQuery -Query $query
 $nonEncryptedDbCount = if ($dataset) { @($dataset | Select-Object -Property name -Unique).Count } else { 0 }
 $status = if ($nonEncryptedDbCount -eq 0) { "Pass" } else { "Fail" }
 $description = "Ensure user databases are encrypted with Transparent Data Encryption (TDE)"
